@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, Heart, Shield, Sun, Moon, Coffee, Play, Square, BookOpen, LifeBuoy, Plane, Users, Sparkles, Share2, Plus, Trash2, X, BookHeart } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useSettingsStore, type CustomDua } from '../store/useSettingsStore';
 
 const emptyDuaForm: Omit<CustomDua, 'id'> = { title: '', arabic: '', transliteration: '', translation: '' };
@@ -12,6 +13,36 @@ export default function Duas() {
   const [tab, setTab] = useState<'all' | 'favorites' | 'mine'>('all');
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState(emptyDuaForm);
+  const [audioStatus, setAudioStatus] = useState<string | null>(null);
+
+  const stopAudio = () => {
+    window.speechSynthesis.cancel();
+    utteranceRef.current = null;
+    setPlayingId(null);
+  };
+
+  const loadVoices = () =>
+    new Promise<SpeechSynthesisVoice[]>((resolve) => {
+      const current = window.speechSynthesis.getVoices();
+      if (current.length) {
+        resolve(current);
+        return;
+      }
+
+      const handleVoicesChanged = () => {
+        const loaded = window.speechSynthesis.getVoices();
+        if (loaded.length) {
+          window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+          resolve(loaded);
+        }
+      };
+
+      window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
+      window.setTimeout(() => {
+        window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+        resolve(window.speechSynthesis.getVoices());
+      }, 1000);
+    });
 
   const shareDua = async (title: string, arabic: string, translation: string) => {
     const text = `${title}\n\n${arabic}\n\n${translation}`;
@@ -32,56 +63,78 @@ export default function Duas() {
 
   const submitNewDua = () => {
     if (!form.title.trim() || !form.arabic.trim()) return;
-    addMyDua({ id: `custom-${Date.now()}`, ...form });
+    addMyDua({
+      id: `custom-${Date.now()}`,
+      title: form.title.trim(),
+      arabic: form.arabic.trim(),
+      transliteration: form.transliteration.trim(),
+      translation: form.translation.trim(),
+    });
     setForm(emptyDuaForm);
     setShowAddForm(false);
   };
 
   useEffect(() => {
-    // Pre-load voices
-    window.speechSynthesis.getVoices();
-    
     return () => {
-      window.speechSynthesis.cancel();
+      stopAudio();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const playAudio = (id: string, text: string, lang: string = 'ar-SA') => {
+  const playAudio = async (id: string, text: string, lang: string = 'ar-SA') => {
     try {
       if (playingId === id) {
-        window.speechSynthesis.cancel();
-        setPlayingId(null);
+        stopAudio();
+        setAudioStatus(null);
         return;
       }
 
-      window.speechSynthesis.cancel();
-      
+      if (!('speechSynthesis' in window)) {
+        setAudioStatus('This browser does not support audio playback.');
+        return;
+      }
+
+      stopAudio();
+      setAudioStatus(null);
+
+      const voices = await loadVoices();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = lang;
-      utterance.rate = 0.8; // Slightly slower for Arabic
+      utterance.rate = lang.startsWith('ar') ? 0.82 : 0.92;
+      utterance.pitch = 1;
       
-      // Try to find a specific voice for the language
-      const voices = window.speechSynthesis.getVoices();
-      const voice = voices.find(v => v.lang.startsWith(lang.split('-')[0]));
+      const languagePrefix = lang.split('-')[0].toLowerCase();
+      const voice =
+        voices.find((v) => v.lang.toLowerCase() === lang.toLowerCase()) ||
+        voices.find((v) => v.lang.toLowerCase().startsWith(languagePrefix)) ||
+        voices.find((v) => v.lang.toLowerCase().includes(languagePrefix)) ||
+        voices[0];
       if (voice) {
         utterance.voice = voice;
       }
 
+      utteranceRef.current = utterance;
+      setPlayingId(id);
+      setAudioStatus('Playing...');
+
+      utterance.onstart = () => setAudioStatus('Playing...');
       utterance.onend = () => {
         setPlayingId(null);
+        setAudioStatus(null);
+        utteranceRef.current = null;
       };
       utterance.onerror = (e) => {
         console.error("Speech synthesis error:", e);
         setPlayingId(null);
+        setAudioStatus('Audio playback could not start on this device.');
+        utteranceRef.current = null;
       };
-      
-      utteranceRef.current = utterance; // Prevent garbage collection
-      setPlayingId(id);
-      window.speechSynthesis.resume();
+
       window.speechSynthesis.speak(utterance);
     } catch (error) {
       console.error("Audio playback failed:", error);
       setPlayingId(null);
+      setAudioStatus('Audio playback could not start on this device.');
     }
   };
 
@@ -438,46 +491,75 @@ export default function Duas() {
   );
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-        <div>
-          <p className="eyebrow-gold mb-2">Adhkar &amp; Supplication</p>
-          <h1 className="text-3xl font-bold font-serif text-stone-900">Duas &amp; Supplications</h1>
-        </div>
-
-        <div className="relative w-full md:w-72">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-stone-400" />
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-8 max-w-6xl mx-auto"
+    >
+      <section className="surface surface-interactive rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-8 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(212,175,55,0.10),transparent_34%),radial-gradient(circle_at_left,rgba(11,61,46,0.08),transparent_30%)] pointer-events-none" />
+        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-3 max-w-2xl">
+            <p className="eyebrow-gold">Adhkar &amp; Supplication</p>
+            <div className="space-y-2">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold font-serif text-stone-900 tracking-tight">Duas &amp; Supplications</h1>
+              <p className="text-stone-600 leading-relaxed max-w-xl">
+                Search, save favorites, listen to recitation, and add your own duas in a cleaner, premium reading experience.
+              </p>
+            </div>
           </div>
-          <input
-            type="text"
-            placeholder="Search Duas..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="block w-full pl-10 pr-3 py-2.5 rounded-xl leading-5 input-premium sm:text-sm"
-          />
-        </div>
-      </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-        {([
-          { id: 'all', label: 'All Duas' },
-          { id: 'favorites', label: 'Favorites' },
-          { id: 'mine', label: 'My Duas' },
-        ] as const).map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`px-5 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-300 ${
-              tab === t.id
-                ? 'bg-[#0B3D2E] text-gold-200 shadow-md border border-gold-400/40'
-                : 'surface text-stone-600 hover:border-gold-300/50'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div className="surface rounded-2xl px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-stone-400 font-bold">Categories</p>
+              <p className="text-2xl font-bold text-emerald-800">{duaCategories.length}</p>
+            </div>
+            <div className="surface rounded-2xl px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-stone-400 font-bold">Favorites</p>
+              <p className="text-2xl font-bold text-rose-500">{favoriteDuas.length}</p>
+            </div>
+            <div className="surface rounded-2xl px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-stone-400 font-bold">Personal</p>
+              <p className="text-2xl font-bold text-gold-600">{myDuas.length}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative z-10 mt-6 flex flex-col lg:flex-row gap-4 lg:items-center">
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-stone-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search duas, meanings, or references"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="block w-full pl-11 pr-4 py-3 rounded-2xl leading-5 input-premium placeholder:text-stone-400 text-stone-900 shadow-sm"
+            />
+          </div>
+
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            {([
+              { id: 'all', label: 'All Duas' },
+              { id: 'favorites', label: 'Favorites' },
+              { id: 'mine', label: 'My Duas' },
+            ] as const).map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`px-5 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-300 ${
+                  tab === t.id
+                    ? 'bg-[#0B3D2E] text-gold-200 shadow-md border border-gold-400/40'
+                    : 'surface text-stone-600 hover:border-gold-300/50 hover:-translate-y-0.5'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {tab === 'mine' ? (
         <div className="space-y-6">
@@ -490,13 +572,13 @@ export default function Duas() {
           </button>
 
           {filteredMyDuas.length === 0 && (
-            <div className="text-center py-16 text-stone-500 flex flex-col items-center gap-3">
+            <div className="surface rounded-[2rem] text-center py-16 text-stone-500 flex flex-col items-center gap-3">
               <BookHeart className="w-10 h-10 text-stone-300" />
               <p>You haven&apos;t added any personal duas yet.</p>
             </div>
           )}
 
-          <div className="grid gap-6">
+          <div className="grid gap-6 md:grid-cols-2">
             {filteredMyDuas.map((dua) => (
               <div key={dua.id} className="surface surface-interactive p-6 rounded-3xl">
                 <div className="flex justify-between items-start mb-4">
@@ -549,16 +631,19 @@ export default function Duas() {
               <div className="flex-1 divider-gold opacity-40" />
             </div>
             
-            <div className="grid gap-6">
+            <div className="grid gap-6 lg:grid-cols-2">
               {category.duas.map((dua) => (
-                <div key={dua.id} className="surface surface-interactive p-6 rounded-3xl">
-                  <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-xl font-semibold text-emerald-800">{dua.title}</h3>
-                    <div className="flex gap-2">
+                <div key={dua.id} className="surface surface-interactive p-6 rounded-3xl group">
+                  <div className="flex justify-between items-start gap-4 mb-4">
+                    <div className="min-w-0">
+                      <h3 className="text-xl font-semibold text-emerald-800 group-hover:text-emerald-900 transition-colors">{dua.title}</h3>
+                      <p className="text-xs uppercase tracking-[0.18em] text-stone-400 mt-1">{dua.reference}</p>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
                       <button
                         onClick={() => playAudio(dua.id, dua.arabic, 'ar-SA')}
-                        className={`p-2 transition-colors rounded-full ${playingId === dua.id ? 'text-gold-600 bg-gold-50' : 'text-stone-400 hover:text-emerald-700 hover:bg-stone-50'}`}
-                        title={playingId === dua.id ? "Stop Audio" : "Play Audio"}
+                        className={`p-2 transition-all rounded-full hover:-translate-y-0.5 ${playingId === dua.id ? 'text-gold-600 bg-gold-50' : 'text-stone-400 hover:text-emerald-700 hover:bg-stone-50'}`}
+                        title={playingId === dua.id ? 'Stop Audio' : 'Play Audio'}
                       >
                         {playingId === dua.id ? <Square className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current" />}
                       </button>
@@ -604,53 +689,90 @@ export default function Duas() {
         ))}
         
         {filteredCategories.length === 0 && (
-          <div className="text-center py-12 text-stone-500">
+          <div className="surface rounded-[2rem] text-center py-14 text-stone-500">
             {tab === 'favorites' ? 'No favorite duas yet — tap the heart on any dua to save it here.' : 'No duas found matching your search.'}
           </div>
         )}
       </div>
       )}
 
+      <AnimatePresence>
+        {audioStatus && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 rounded-full bg-[#0B3D2E] text-gold-100 px-4 py-2.5 shadow-2xl border border-gold-400/25 text-sm"
+          >
+            {audioStatus}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {showAddForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-emerald-950/50 backdrop-blur-md" onClick={() => setShowAddForm(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="bg-[#FCFAF4] rounded-[2rem] p-6 max-w-lg w-full shadow-2xl max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-xl font-bold text-stone-900 font-serif">Add a Personal Dua</h3>
-              <button onClick={() => setShowAddForm(false)} className="p-2 hover:bg-stone-100 rounded-full">
-                <X className="w-5 h-5 text-stone-500" />
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 sm:p-4 bg-emerald-950/55 backdrop-blur-md" onClick={() => setShowAddForm(false)}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="modal-surface rounded-[2rem] p-5 sm:p-6 max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-y-auto"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="personal-dua-title"
+          >
+            <div className="flex items-start justify-between gap-4 mb-5">
+              <div className="space-y-1">
+                <p className="modal-label">Personal Dua</p>
+                <h3 id="personal-dua-title" className="text-2xl font-bold text-[#102318] font-serif">Add a Personal Dua</h3>
+                <p className="text-sm text-[#425044] leading-relaxed">Keep it private, save it once, and it will stay on this device.</p>
+              </div>
+              <button onClick={() => setShowAddForm(false)} className="p-2.5 hover:bg-white/70 rounded-full transition-colors shrink-0">
+                <X className="w-5 h-5 text-stone-600" />
               </button>
             </div>
-            <div className="space-y-4">
-              <input
-                type="text"
-                placeholder="Title"
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl input-premium outline-none"
-              />
-              <textarea
-                placeholder="Arabic text"
-                value={form.arabic}
-                onChange={(e) => setForm({ ...form, arabic: e.target.value })}
-                dir="rtl"
-                rows={2}
-                className="w-full px-4 py-3 rounded-xl input-premium outline-none font-arabic text-xl"
-              />
-              <input
-                type="text"
-                placeholder="Transliteration (optional)"
-                value={form.transliteration}
-                onChange={(e) => setForm({ ...form, transliteration: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl input-premium outline-none"
-              />
-              <textarea
-                placeholder="Translation / meaning (optional)"
-                value={form.translation}
-                onChange={(e) => setForm({ ...form, translation: e.target.value })}
-                rows={2}
-                className="w-full px-4 py-3 rounded-xl input-premium outline-none"
-              />
-              <button onClick={submitNewDua} className="btn-gold w-full py-3 rounded-xl">
+            <div className="grid gap-4">
+              <div>
+                <label className="modal-label mb-2">Title</label>
+                <input
+                  type="text"
+                  placeholder="A short name for this dua"
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  className="modal-field w-full px-4 py-3.5 rounded-2xl outline-none"
+                />
+              </div>
+              <div>
+                <label className="modal-label mb-2">Arabic text</label>
+                <textarea
+                  placeholder="Paste the Arabic text here"
+                  value={form.arabic}
+                  onChange={(e) => setForm({ ...form, arabic: e.target.value })}
+                  dir="rtl"
+                  rows={4}
+                  className="modal-field w-full px-4 py-3.5 rounded-2xl outline-none font-arabic text-2xl leading-loose text-right"
+                />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="modal-label mb-2">Transliteration</label>
+                  <input
+                    type="text"
+                    placeholder="Optional transliteration"
+                    value={form.transliteration}
+                    onChange={(e) => setForm({ ...form, transliteration: e.target.value })}
+                    className="modal-field w-full px-4 py-3.5 rounded-2xl outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="modal-label mb-2">Meaning</label>
+                  <textarea
+                    placeholder="Optional translation or meaning"
+                    value={form.translation}
+                    onChange={(e) => setForm({ ...form, translation: e.target.value })}
+                    rows={4}
+                    className="modal-field w-full px-4 py-3.5 rounded-2xl outline-none"
+                  />
+                </div>
+              </div>
+              <button onClick={submitNewDua} className="btn-gold w-full py-3.5 rounded-2xl">
                 <Plus className="w-4 h-4" />
                 Save Dua
               </button>
@@ -658,6 +780,6 @@ export default function Duas() {
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

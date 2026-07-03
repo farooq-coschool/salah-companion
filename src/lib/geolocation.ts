@@ -25,8 +25,12 @@ export function detectBrowserLocation(): Promise<DetectedLocation> {
 
         try {
           const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=10`
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&accept-language=en&lat=${latitude}&lon=${longitude}&zoom=10`
           );
+          if (!response.ok) {
+            resolve({ latitude, longitude, city: 'Current Location', country: '' });
+            return;
+          }
           const data = await response.json();
           const address = data?.address || {};
           const city =

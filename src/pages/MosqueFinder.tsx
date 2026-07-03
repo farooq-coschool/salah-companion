@@ -57,8 +57,15 @@ export default function MosqueFinder() {
       const query = `[out:json][timeout:25];(node["amenity"="mosque"](around:${radiusKm * 1000},${latitude},${longitude});way["amenity"="mosque"](around:${radiusKm * 1000},${latitude},${longitude}););out center 60;`;
       const response = await fetch('https://overpass-api.de/api/interpreter', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain;charset=UTF-8',
+          Accept: 'application/json',
+        },
         body: query,
       });
+      if (!response.ok) {
+        throw new Error(`Overpass request failed with ${response.status}`);
+      }
       const data = await response.json();
       const mosques: MosqueResult[] = (data.elements || [])
         .map((el: any) => {
@@ -139,7 +146,7 @@ export default function MosqueFinder() {
                     href={`https://www.openstreetmap.org/?mlat=${mosque.lat}&mlon=${mosque.lon}#map=17/${mosque.lat}/${mosque.lon}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-4 p-5 hover:bg-gold-50/40 transition-colors group"
+                    className="flex items-center gap-4 p-5 hover:bg-gold-50/40 transition-all group hover:-translate-y-0.5"
                   >
                     <div className="icon-badge p-3 rounded-2xl shrink-0">
                       <MapPin className="w-5 h-5" />
