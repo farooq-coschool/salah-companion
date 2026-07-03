@@ -39,7 +39,12 @@ export default function Layout() {
   ];
 
   return (
-    <div className="min-h-screen bg-transparent text-stone-900 pb-24 md:pb-0 md:pl-72">
+    <div className="min-h-screen bg-transparent text-stone-900 pb-24 md:pb-0 md:pl-72 relative overflow-hidden">
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute -top-24 -left-20 w-72 h-72 rounded-full bg-gold-400/10 blur-3xl" />
+        <div className="absolute top-20 right-0 w-80 h-80 rounded-full bg-emerald-700/10 blur-3xl" />
+        <div className="absolute bottom-0 left-1/3 w-[36rem] h-[36rem] rounded-full bg-gold-300/8 blur-3xl" />
+      </div>
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-72 fixed inset-y-0 left-0 bg-gradient-to-b from-[#0B3D2E] via-[#0A3629] to-[#06231A] z-50 border-r border-gold-400/20 shadow-[8px_0_40px_-12px_rgba(6,35,26,0.5)]">
         {/* subtle top gold hairline */}
@@ -93,12 +98,15 @@ export default function Layout() {
       <header className="md:hidden bg-gradient-to-r from-[#0B3D2E] to-[#06231A] p-4 sticky top-0 z-40 border-b border-gold-400/20 shadow-lg">
         <div className="flex items-center justify-center gap-2.5">
           <CrescentMark className="w-7 h-7 shrink-0" />
-          <h1 className="text-lg font-bold text-gold-100 text-center font-serif tracking-tight">Salaah Companion</h1>
+          <div className="text-center">
+            <h1 className="text-lg font-bold text-gold-100 font-serif tracking-tight">Salaah Companion</h1>
+            <p className="text-[10px] uppercase tracking-[0.24em] text-emerald-200/55">Recite • Reflect • Return</p>
+          </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="p-4 md:p-10 max-w-5xl mx-auto">
+      <main className="relative z-10 p-4 md:p-10 max-w-7xl mx-auto">
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}

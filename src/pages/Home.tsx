@@ -466,64 +466,115 @@ export default function Home() {
       </AnimatePresence>
 
       {/* Header / Next Prayer */}
-      <motion.section 
+      <motion.section
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-br from-[#12664A] via-[#0B3D2E] to-[#06231A] text-white rounded-[2rem] p-8 md:p-10 shadow-2xl shadow-emerald-950/30 relative overflow-hidden border border-gold-400/20"
+        className="hero-panel section-shell rounded-[2.3rem] p-6 md:p-10 relative overflow-hidden"
       >
-        <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-gold-400/80 to-transparent" />
-        <div className="absolute top-0 right-0 opacity-[0.08] pointer-events-none transform translate-x-1/4 -translate-y-1/4">
-          <svg width="400" height="400" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" />
-          </svg>
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute -top-24 -right-12 w-72 h-72 rounded-full bg-gold-300/10 blur-3xl" />
+          <div className="absolute bottom-0 left-1/3 w-80 h-80 rounded-full bg-white/5 blur-3xl" />
         </div>
-        
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 text-gold-100/90 mb-8 bg-white/[0.06] w-fit px-4 py-2 rounded-full backdrop-blur-md border border-gold-400/20">
-            <MapPin className="w-4 h-4 text-gold-300" />
-            <span className="text-sm font-medium tracking-wide">{location.city}, {location.country}</span>
-            {locationMode === 'auto' && (
-              <span className="flex items-center gap-1 pl-2 ml-1 border-l border-white/15 text-[10px] uppercase tracking-widest font-bold text-emerald-200/70">
-                <ShieldCheck className="w-3 h-3" />
-                Auto
-              </span>
-            )}
-          </div>
-          
-          <div className="space-y-2">
-            <p className="eyebrow-gold !text-gold-300/80">Next Prayer</p>
-            <div className="flex items-center justify-between">
-              <h2 className="text-6xl font-bold font-serif tracking-tight text-gold-50">
-                {nextPrayer?.name === 'Dhuhr' && isFriday ? 'Jumu\'ah' : nextPrayer?.name}
+
+        <div className="relative z-10 grid gap-8 lg:grid-cols-[1.3fr_0.9fr] lg:items-center">
+          <div className="space-y-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/15 backdrop-blur-md text-gold-50/90">
+              <MapPin className="w-4 h-4 text-gold-300" />
+              <span className="text-sm font-medium tracking-wide">{location.city}, {location.country}</span>
+              {locationMode === 'auto' && (
+                <span className="flex items-center gap-1 pl-2 ml-1 border-l border-white/15 text-[10px] uppercase tracking-widest font-bold text-emerald-200/70">
+                  <ShieldCheck className="w-3 h-3" />
+                  Auto
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <p className="eyebrow-gold !text-gold-200/75">Today&apos;s Prayer Journey</p>
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold font-serif tracking-tight text-gold-50 leading-tight">
+                Build a quiet rhythm for recitation, reflection, and salah.
               </h2>
-              <div className="flex gap-3">
-                {isPlayingImam && (
-                  <button 
-                    onClick={() => playImamRecitation(nextPrayer?.name === 'Dhuhr' && isFriday ? "Jumu'ah" : nextPrayer?.name || 'Fajr')}
-                    className="p-4 bg-white/[0.06] hover:bg-white/[0.12] rounded-full backdrop-blur-md border border-gold-400/25 transition-all hover:scale-105 flex items-center gap-3 shadow-lg"
-                    title="Stop Imam Recitation"
-                  >
-                    <PauseCircle className="w-6 h-6 text-gold-200" />
-                    <span className="text-gold-50 font-medium pr-2 hidden sm:inline">Imam</span>
-                  </button>
-                )}
-                <button 
-                  onClick={toggleAdhan}
-                  className="p-4 bg-white/[0.06] hover:bg-white/[0.12] rounded-full backdrop-blur-md border border-gold-400/25 transition-all hover:scale-105 flex items-center gap-3 shadow-lg"
-                  title="Play Adhan"
-                >
-                  {isPlayingAdhan ? (
-                    <PauseCircle className="w-6 h-6 text-gold-200" />
-                  ) : (
-                    <PlayCircle className="w-6 h-6 text-gold-200" />
-                  )}
-                  <span className="text-gold-50 font-medium pr-2 hidden sm:inline">Adhan</span>
-                </button>
+              <p className="max-w-2xl text-gold-50/76 text-base md:text-lg leading-relaxed">
+                The app now opens like a devotional space: large reading cards, category-focused duas, and a calmer layout that feels easier to sit with for longer recitation sessions.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="stat-tile rounded-2xl px-4 py-3">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-stone-500 font-bold">Prayer</p>
+                <p className="text-lg font-bold text-stone-900">{nextPrayer?.name === 'Dhuhr' && isFriday ? 'Jumu\'ah' : nextPrayer?.name}</p>
+              </div>
+              <div className="stat-tile rounded-2xl px-4 py-3">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-stone-500 font-bold">Time</p>
+                <p className="text-lg font-bold text-stone-900">{nextPrayer?.time}</p>
+              </div>
+              <div className="stat-tile rounded-2xl px-4 py-3">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-stone-500 font-bold">Countdown</p>
+                <p className="text-lg font-bold text-stone-900">in {nextPrayer?.diff}</p>
+              </div>
+              <div className="stat-tile rounded-2xl px-4 py-3">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-stone-500 font-bold">Mode</p>
+                <p className="text-lg font-bold text-stone-900">{reciter.split('.').pop()}</p>
               </div>
             </div>
-            <div className="flex items-baseline gap-4 mt-4">
-              <p className="text-4xl font-light tracking-tight text-gold-50/95">{nextPrayer?.time}</p>
-              <p className="text-emerald-200/70 text-lg font-medium">in {nextPrayer?.diff}</p>
+          </div>
+
+          <div className="hero-panel-soft rounded-[2rem] p-5 md:p-6 text-stone-900 shadow-2xl">
+            <div className="flex items-center justify-between gap-4 mb-5">
+              <div>
+                <p className="eyebrow-gold mb-1">Recitation Control</p>
+                <h3 className="text-2xl font-bold font-serif text-stone-900">Sit, listen, recite</h3>
+              </div>
+              <div className="icon-badge p-3 rounded-2xl">
+                <Heart className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="rounded-2xl bg-[#0B3D2E] text-gold-50 p-5 shadow-lg">
+                <p className="text-[10px] uppercase tracking-[0.24em] text-gold-100/70 font-bold mb-2">Next Prayer</p>
+                <div className="flex items-baseline justify-between gap-4">
+                  <h3 className="text-3xl md:text-4xl font-bold font-serif tracking-tight">
+                    {nextPrayer?.name === 'Dhuhr' && isFriday ? 'Jumu\'ah' : nextPrayer?.name}
+                  </h3>
+                  <div className="text-right">
+                    <p className="text-2xl font-light">{nextPrayer?.time}</p>
+                    <p className="text-gold-100/80 text-sm">in {nextPrayer?.diff}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                {isPlayingImam && (
+                  <button
+                    onClick={() => playImamRecitation(nextPrayer?.name === 'Dhuhr' && isFriday ? "Jumu'ah" : nextPrayer?.name || 'Fajr')}
+                    className="flex-1 btn-gold px-5 py-3.5 rounded-2xl text-sm"
+                    title="Stop Imam Recitation"
+                  >
+                    <PauseCircle className="w-5 h-5" />
+                    Stop Recitation
+                  </button>
+                )}
+                <button
+                  onClick={toggleAdhan}
+                  className="flex-1 px-5 py-3.5 rounded-2xl text-sm font-bold bg-white/80 text-stone-900 border border-gold-400/20 hover:bg-white transition-all shadow-md flex items-center justify-center gap-2"
+                  title="Play Adhan"
+                >
+                  {isPlayingAdhan ? <PauseCircle className="w-5 h-5 text-emerald-800" /> : <PlayCircle className="w-5 h-5 text-emerald-800" />}
+                  {isPlayingAdhan ? 'Pause Adhan' : 'Play Adhan'}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div className="rounded-2xl bg-white/75 p-4 border border-gold-400/15">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-stone-500 font-bold mb-1">Status</p>
+                  <p className="text-sm font-semibold text-stone-800">Focus mode ready</p>
+                </div>
+                <div className="rounded-2xl bg-white/75 p-4 border border-gold-400/15">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-stone-500 font-bold mb-1">Reminder</p>
+                  <p className="text-sm font-semibold text-stone-800">Recite with calm pacing</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
