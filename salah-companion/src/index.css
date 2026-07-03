@@ -1,0 +1,153 @@
+@import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-arabic: "Amiri", serif;
+
+  /* Deep emerald — the app's primary "lacquer" tone */
+  --color-emerald-950: #06231A;
+  --color-emerald-900: #0B3D2E;
+  --color-emerald-850: #0E4A37;
+  --color-emerald-800: #10573F;
+
+  /* Gold — the accent metal */
+  --color-gold-50:  #FBF6E9;
+  --color-gold-100: #F5EACB;
+  --color-gold-200: #EBDBA0;
+  --color-gold-300: #DFC474;
+  --color-gold-400: #D4AF37;
+  --color-gold-500: #C09A2B;
+  --color-gold-600: #9C7C1F;
+  --color-gold-700: #7A6118;
+
+  /* Warm ivory surfaces */
+  --color-ivory-50: #FCFAF4;
+  --color-ivory-100: #F7F2E7;
+  --color-ivory-200: #F0E9D8;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: #1C1B18;
+  background-color: #F8F4EA;
+  background-image:
+    radial-gradient(circle at 15% 0%, rgba(212, 175, 55, 0.10), transparent 45%),
+    radial-gradient(circle at 85% 8%, rgba(11, 61, 46, 0.06), transparent 40%),
+    linear-gradient(135deg, rgba(191, 161, 74, 0.10) 1px, transparent 1px),
+    linear-gradient(45deg, rgba(191, 161, 74, 0.10) 1px, transparent 1px);
+  background-size: auto, auto, 34px 34px, 34px 34px;
+  background-attachment: fixed;
+}
+
+.font-arabic {
+  font-family: var(--font-arabic);
+}
+
+/* Hide scrollbar for horizontal scrolling */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* ---------------------------------------------------------- */
+/* Premium design-system primitives, reused across every page */
+/* ---------------------------------------------------------- */
+@layer components {
+  /* Standard content surface: warm card with hairline gold-on-hover border */
+  .surface {
+    background-color: rgba(255, 255, 255, 0.86);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(28, 27, 24, 0.08);
+    box-shadow: 0 1px 2px rgba(28, 27, 24, 0.04), 0 12px 28px -18px rgba(11, 61, 46, 0.18);
+    transition: border-color 300ms ease, box-shadow 300ms ease, transform 300ms ease;
+  }
+  .surface-interactive:hover {
+    border-color: rgba(212, 175, 55, 0.45);
+    box-shadow: 0 1px 2px rgba(28, 27, 24, 0.04), 0 20px 40px -16px rgba(11, 61, 46, 0.22);
+  }
+
+  /* Small uppercase gold "eyebrow" label used above headings */
+  .eyebrow-gold {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--color-gold-600);
+  }
+
+  /* Thin gold gradient hairline divider */
+  .divider-gold {
+    height: 1px;
+    width: 100%;
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.55), transparent);
+    border: none;
+  }
+
+  /* Primary CTA button — deep emerald lacquer with a gold inner rim */
+  .btn-gold {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #FBF6E9;
+    background: linear-gradient(160deg, #12664A 0%, #0B3D2E 55%, #082C21 100%);
+    border: 1px solid rgba(212, 175, 55, 0.5);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 14px 30px -12px rgba(11, 61, 46, 0.55);
+    transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+  }
+  .btn-gold:hover {
+    transform: translateY(-2px);
+    border-color: rgba(212, 175, 55, 0.85);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), 0 18px 36px -12px rgba(11, 61, 46, 0.6);
+  }
+  .btn-gold:active {
+    transform: translateY(0);
+  }
+
+  /* Icon badge — small gradient tile used for section icons */
+  .icon-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(155deg, var(--color-emerald-850), var(--color-emerald-950));
+    color: var(--color-gold-200);
+    border: 1px solid rgba(212, 175, 55, 0.35);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+
+  /* Gold-ring focus for inputs and selects */
+  .input-premium {
+    background-color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(28, 27, 24, 0.12);
+    transition: border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
+  }
+  .input-premium:focus {
+    outline: none;
+    background-color: rgba(255, 255, 255, 0.95);
+    border-color: var(--color-gold-400);
+    box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.15);
+  }
+
+  /* Corner ornament flourish for hero-style headers */
+  .ornament-corner {
+    position: absolute;
+    width: 3rem;
+    height: 3rem;
+    border-top: 1.5px solid rgba(212, 175, 55, 0.55);
+  }
+}
