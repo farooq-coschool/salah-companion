@@ -11,6 +11,7 @@ export default function Duas() {
   const [playingId, setPlayingId] = useState<string | null>(null);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const [tab, setTab] = useState<'all' | 'favorites' | 'mine'>('all');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState(emptyDuaForm);
   const [audioStatus, setAudioStatus] = useState<string | null>(null);
@@ -476,14 +477,20 @@ export default function Duas() {
     },
   ];
 
-  const filteredCategories = duaCategories.map(category => ({
-    ...category,
-    duas: category.duas.filter(dua =>
-      (dua.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      dua.translation.toLowerCase().includes(searchQuery.toLowerCase())) &&
-      (tab !== 'favorites' || favoriteDuas.includes(dua.id))
-    )
-  })).filter(category => category.duas.length > 0);
+  const visibleCategories = duaCategories
+    .map((category) => ({
+      ...category,
+      duas: category.duas.filter(
+        (dua) =>
+          (dua.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            dua.translation.toLowerCase().includes(searchQuery.toLowerCase())) &&
+          (tab !== 'favorites' || favoriteDuas.includes(dua.id))
+      ),
+    }))
+    .filter((category) => category.duas.length > 0);
+
+  const selectedCategory =
+    selectedCategoryId ? visibleCategories.find((category) => category.id === selectedCategoryId) ?? null : null;
 
   const filteredMyDuas = myDuas.filter(dua =>
     dua.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -559,6 +566,60 @@ export default function Duas() {
             ))}
           </div>
         </div>
+
+        {tab !== 'mine' && (
+          <div className="relative z-10 mt-6">
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <div>
+                <p className="eyebrow-gold mb-1">Choose a category</p>
+                <h2 className="text-xl md:text-2xl font-bold text-stone-900 font-serif">Open duas one category at a time</h2>
+              </div>
+              {selectedCategoryId && (
+                <button
+                  onClick={() => setSelectedCategoryId(null)}
+                  className="px-4 py-2 rounded-full surface text-sm font-bold text-stone-600 hover:text-stone-900 hover:-translate-y-0.5 transition-all"
+                >
+                  Clear selection
+                </button>
+              )}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {visibleCategories.map((category) => {
+                const isActive = selectedCategoryId === category.id;
+                return (
+                  <button
+                    key={category.id}
+                    onClick={() => {
+                      setSelectedCategoryId(category.id);
+                      document.getElementById(category.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }}
+                    className={`surface surface-interactive text-left rounded-[1.75rem] p-5 md:p-6 transition-all duration-300 hover:-translate-y-1 ${
+                      isActive ? 'ring-2 ring-gold-400/60 border-gold-400/50' : ''
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="space-y-3 min-w-0">
+                        <div className="icon-badge p-3 rounded-2xl w-fit">
+                          <category.icon className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-stone-900 font-serif">{category.title}</h3>
+                          <p className="text-sm text-stone-500 mt-1 leading-relaxed">
+                            {category.duas.length} dua{category.duas.length === 1 ? '' : 's'} ready to read.
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-xs uppercase tracking-[0.18em] font-bold text-gold-700 bg-gold-50 px-3 py-1.5 rounded-full shrink-0">
+                        Open
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </section>
 
       {tab === 'mine' ? (
@@ -622,7 +683,7 @@ export default function Duas() {
       ) : (
       <div className="space-y-12">
         {filteredCategories.map((category) => (
-          <section key={category.id}>
+          <section key={category.id} id={category.id} className="scroll-mt-8">
             <div className="flex items-center gap-3 mb-6">
               <div className="icon-badge p-3 rounded-2xl">
                 <category.icon className="w-6 h-6" />
@@ -631,7 +692,7 @@ export default function Duas() {
               <div className="flex-1 divider-gold opacity-40" />
             </div>
             
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid gap-6">
               {category.duas.map((dua) => (
                 <div key={dua.id} className="surface surface-interactive p-6 rounded-3xl group">
                   <div className="flex justify-between items-start gap-4 mb-4">
